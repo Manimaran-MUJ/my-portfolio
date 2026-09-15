@@ -442,7 +442,7 @@ function App() {
           />
 
           <span className="logo">
-            Manimaran<span>.</span>
+            Manimaran Annamalai
           </span>
 
         </a>
@@ -465,15 +465,10 @@ function App() {
 
           <div className="hero-content">
 
-            <div className="eyebrow">
-              <span className="status-dot"></span>
-              AVAILABLE FOR FREELANCE PROJECTS
-            </div>
-
             <h1>
               Hi, I'm{" "}
               <span className="gradient-text">
-                Manimaran.
+                Manimaran Annamalai.
               </span>
             </h1>
 
@@ -524,10 +519,6 @@ function App() {
                 />
               </div>
 
-              <div className="photo-status">
-                <span></span>
-                Open to freelance
-              </div>
             </div>
 
             <div className="hero-profile-info">
@@ -537,7 +528,7 @@ function App() {
               </strong>
 
               <span>
-                Full Stack & Frontend Engineering
+                Full Stack & AI Engineering
               </span>
 
             </div>

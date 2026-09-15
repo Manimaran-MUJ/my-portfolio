@@ -5,39 +5,24 @@ import { GoogleGenAI } from "@google/genai";
 import { manimaranKnowledgeBase } from "./knowledgeBase";
 import { sendInquiryEmail } from "./mailer";
 import rateLimit from "express-rate-limit";
-import { saveInquiry } from "./database";
-import crypto from "crypto";
-import { getInquiries } from "./database";
-import session from "express-session";
-import crypto from "crypto";
 
 dotenv.config();
 
 const app = express();
+
 const PORT = 5000;
 
 app.use(
   cors({
     origin: "http://localhost:5173",
-    credentials: true,
   })
 );
 
 app.use(express.json({ limit: "50kb" }));
 
-app.use(
-  session({
-    secret: process.env.ADMIN_SESSION_SECRET || "",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 8,
-    },
-  })
-);
+// ------------------------------------
+// Rate Limiting
+// ------------------------------------
 
 const inquiryLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -60,30 +45,27 @@ const chatLimiter = rateLimit({
   },
 });
 
-const requireAdmin = (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  if (req.session.isAdmin !== true) {
-    return res.status(401).json({
-      success: false,
-      error: "Unauthorized",
-    });
-  }
-
-  next();
-};
+// ------------------------------------
+// Gemini AI
+// ------------------------------------
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
+
+// ------------------------------------
+// Health Check
+// ------------------------------------
 
 app.get("/", (_req, res) => {
   res.json({
     message: "Manimaran AI Portfolio API is running",
   });
 });
+
+// ------------------------------------
+// AI Chat
+// ------------------------------------
 
 app.post("/api/chat", chatLimiter, async (req, res) => {
   try {
@@ -97,7 +79,8 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
 
     if (message.length > 2000) {
       return res.status(400).json({
-        error: "Message is too long. Please keep it under 2000 characters.",
+        error:
+          "Message is too long. Please keep it under 2000 characters.",
       });
     }
 
@@ -135,9 +118,7 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
 
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",
-
       contents,
-
       config: {
         systemInstruction: manimaranKnowledgeBase,
       },
@@ -155,58 +136,9 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
   }
 });
 
-app.post("/api/admin/login", (req, res) => {
-  try {
-    const { apiKey } = req.body;
-
-    if (!apiKey || typeof apiKey !== "string") {
-      return res.status(400).json({
-        success: false,
-        error: "Admin key is required.",
-      });
-    }
-
-    const adminApiKey = process.env.ADMIN_API_KEY;
-
-    if (!adminApiKey) {
-      return res.status(500).json({
-        success: false,
-        error: "Admin authentication is not configured.",
-      });
-    }
-
-    const expectedBuffer = Buffer.from(adminApiKey);
-    const providedBuffer = Buffer.from(apiKey);
-
-    const isValid =
-      expectedBuffer.length === providedBuffer.length &&
-      crypto.timingSafeEqual(
-        expectedBuffer,
-        providedBuffer
-      );
-
-    if (!isValid) {
-      return res.status(401).json({
-        success: false,
-        error: "Invalid admin credentials.",
-      });
-    }
-
-    req.session.isAdmin = true;
-
-    res.json({
-      success: true,
-      message: "Admin login successful.",
-    });
-  } catch (error) {
-    console.error("Admin login error:", error);
-
-    res.status(500).json({
-      success: false,
-      error: "Unable to process admin login.",
-    });
-  }
-});
+// ------------------------------------
+// Project Inquiry
+// ------------------------------------
 
 app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
   try {
@@ -219,6 +151,7 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
       website,
     } = req.body;
 
+    // Honeypot protection
     if (website) {
       return res.status(400).json({
         success: false,
@@ -226,6 +159,7 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
       });
     }
 
+    // Required fields
     if (
       !name ||
       typeof name !== "string" ||
@@ -240,6 +174,7 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
       });
     }
 
+    // Email validation
     const emailPattern =
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -254,39 +189,38 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
       name: name.trim(),
       email: email.trim(),
       project: project.trim(),
+
       budget:
         typeof budget === "string"
           ? budget.trim()
           : "",
+
       timeline:
         typeof timeline === "string"
           ? timeline.trim()
           : "",
-      receivedAt: new Date().toISOString(),
     };
 
     console.log("\n==============================");
     console.log("NEW PROJECT INQUIRY");
     console.log("==============================");
+
     console.log(`Name: ${inquiry.name}`);
     console.log(`Email: ${inquiry.email}`);
     console.log(`Project: ${inquiry.project}`);
+
     console.log(
       `Budget: ${inquiry.budget || "Not provided"}`
     );
+
     console.log(
       `Timeline: ${inquiry.timeline || "Not provided"}`
     );
-    console.log(
-      `Received: ${inquiry.receivedAt}`
-    );
+
     console.log("==============================\n");
 
-    const inquiryId = saveInquiry(inquiry);
-
+    // Send email notification
     await sendInquiryEmail(inquiry);
-
-    console.log(`Inquiry saved with ID: ${inquiryId}`);
 
     res.json({
       success: true,
@@ -303,23 +237,9 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
   }
 });
 
-app.get("/api/inquiries", requireAdmin, (_req, res) => {
-  try {
-    const inquiries = getInquiries();
-
-    res.json({
-      success: true,
-      inquiries,
-    });
-  } catch (error) {
-    console.error("Get inquiries error:", error);
-
-    res.status(500).json({
-      success: false,
-      error: "Unable to retrieve inquiries.",
-    });
-  }
-});
+// ------------------------------------
+// Start Server
+// ------------------------------------
 
 app.listen(PORT, () => {
   console.log(

@@ -12,6 +12,10 @@ const app = express();
 
 const PORT = Number(process.env.PORT) || 5000;
 
+// ------------------------------------
+// CORS
+// ------------------------------------
+
 app.use(
   cors({
     origin: [
@@ -74,18 +78,33 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
   try {
     const { message, history = [] } = req.body;
 
+    // ------------------------------------
+    // Validate message
+    // ------------------------------------
+
     if (!message || typeof message !== "string") {
       return res.status(400).json({
         error: "Message is required",
       });
     }
 
-    if (message.length > 2000) {
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage) {
       return res.status(400).json({
-        error:
-          "Message is too long. Please keep it under 2000 characters.",
+        error: "Message is required",
       });
     }
+
+    if (trimmedMessage.length > 2000) {
+      return res.status(400).json({
+        error: "Message is too long. Please keep it under 2000 characters.",
+      });
+    }
+
+    // ------------------------------------
+    // Validate conversation history
+    // ------------------------------------
 
     const conversationHistory = Array.isArray(history)
       ? history
@@ -93,53 +112,101 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
             (item: any) =>
               item &&
               typeof item.text === "string" &&
+              item.text.trim().length > 0 &&
               item.text.length <= 2000 &&
               (item.role === "user" || item.role === "bot")
           )
           .slice(-20)
       : [];
 
-    const contents = [
-      ...conversationHistory.map((item: any) => ({
-        role: item.role === "bot" ? "model" : "user",
-        parts: [
-          {
-            text: item.text,
-          },
-        ],
-      })),
+    // ------------------------------------
+    // Build Groq messages
+    // ------------------------------------
+    //
+    // Previous messages are provided only as
+    // conversational context.
+    //
+    // The final user message is explicitly marked
+    // as the question that must be answered.
+    // ------------------------------------
 
+    const groqMessages: Array<{
+      role: "system" | "user" | "assistant";
+      content: string;
+    }> = [
       {
-        role: "user",
-        parts: [
-          {
-            text: message,
-          },
-        ],
+        role: "system",
+        content: `
+${manimaranKnowledgeBase}
+
+IMPORTANT CONVERSATION RULES:
+
+1. Answer ONLY the latest user question.
+2. Previous conversation messages are provided only for context.
+3. Do NOT repeat, copy, summarize, or reproduce previous assistant answers unless the user explicitly asks you to.
+4. Do NOT answer previous questions again.
+5. If the latest question is about one specific topic, focus only on that topic.
+6. Keep the answer concise and professional.
+7. Use the portfolio knowledge base as the source of truth.
+8. Never invent experience, employers, clients, projects, certifications, skills, or technologies.
+9. If information is not available in the knowledge base, clearly say that it is not available.
+10. When the user asks a follow-up question, use previous messages only to understand the context of that follow-up.
+11. Do not generate numbered sections such as "1.", "2.", "3." unless they are genuinely useful for answering the latest question.
+12. Do not reproduce content from an earlier response simply because it appears in the conversation history.
+
+The message marked "LATEST USER QUESTION" is the ONLY question you should answer.
+        `.trim(),
       },
     ];
 
-    const response = await groq.chat.completions.create({
-      model: "openai/gpt-oss-20b",
-      messages: [
-        {
-          role: "system",
-          content: manimaranKnowledgeBase,
-        },
-        ...contents.map((item: any) => ({
-          role: item.role === "model" ? "assistant" : item.role,
-          content: item.parts[0].text,
-        })),
-      ],
+    // ------------------------------------
+    // Add previous conversation as context
+    // ------------------------------------
+
+    for (const item of conversationHistory) {
+      groqMessages.push({
+        role: item.role === "bot" ? "assistant" : "user",
+        content: item.text,
+      });
+    }
+
+    // ------------------------------------
+    // Add latest question separately
+    // ------------------------------------
+
+    groqMessages.push({
+      role: "user",
+      content: `
+LATEST USER QUESTION:
+
+${trimmedMessage}
+
+Answer only this latest question.
+      `.trim(),
     });
 
-    const reply = response.choices[0]?.message?.content;
+    // ------------------------------------
+    // Call Groq
+    // ------------------------------------
+
+    const response = await groq.chat.completions.create({
+      model: "openai/gpt-oss-20b",
+      messages: groqMessages,
+    });
+
+    const reply = response.choices[0]?.message?.content?.trim();
 
     if (!reply) {
       throw new Error("Groq returned an empty response");
     }
 
-    res.json({ reply });
+    // ------------------------------------
+    // Send response
+    // ------------------------------------
+
+    res.json({
+      reply,
+    });
   } catch (error) {
     console.error("Groq API error:", error);
 
@@ -164,7 +231,10 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
       website,
     } = req.body;
 
+    // ------------------------------------
     // Honeypot protection
+    // ------------------------------------
+
     if (website) {
       return res.status(400).json({
         success: false,
@@ -172,7 +242,10 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
       });
     }
 
+    // ------------------------------------
     // Required fields
+    // ------------------------------------
+
     if (
       !name ||
       typeof name !== "string" ||
@@ -187,16 +260,22 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
       });
     }
 
+    // ------------------------------------
     // Email validation
-    const emailPattern =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // ------------------------------------
 
-    if (!emailPattern.test(email)) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email.trim())) {
       return res.status(400).json({
         success: false,
         error: "Please provide a valid email address.",
       });
     }
+
+    // ------------------------------------
+    // Prepare inquiry
+    // ------------------------------------
 
     const inquiry = {
       name: name.trim(),
@@ -213,6 +292,10 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
           ? timeline.trim()
           : "",
     };
+
+    // ------------------------------------
+    // Log inquiry
+    // ------------------------------------
 
     console.log("\n==============================");
     console.log("NEW PROJECT INQUIRY");
@@ -232,8 +315,15 @@ app.post("/api/inquiry", inquiryLimiter, async (req, res) => {
 
     console.log("==============================\n");
 
+    // ------------------------------------
     // Send email notification
+    // ------------------------------------
+
     await sendInquiryEmail(inquiry);
+
+    // ------------------------------------
+    // Success response
+    // ------------------------------------
 
     res.json({
       success: true,

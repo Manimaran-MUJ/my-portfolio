@@ -220,7 +220,7 @@ const skillGroups = [
       "JavaScript Automation",
       "VBA Automation",
       "Workflow Automation",
-      "Gemini API",
+      "Groq API",
     ],
   },
 ];
@@ -251,8 +251,8 @@ const automations = [
     icon: "🤖",
     title: "AI Portfolio Assistant",
     description:
-      "Building this AI-powered portfolio assistant using React, Node.js, Express and Gemini API.",
-    tech: ["React", "Node.js", "Gemini API"],
+      "Building this AI-powered portfolio assistant using React, Node.js, Express and Groq API.",
+    tech: ["React", "Node.js", "Groq API"],
   },
 ];
 
@@ -454,6 +454,8 @@ function App() {
           <a href="#experience">Experience</a>
           <a href="#automation">Automation</a>
           <a href="#projects">Projects</a>
+          <a href="#education">Education</a>
+          <a href="#certifications">Certifications</a>
           <a href="#contact">Contact</a>
         </nav>
       </header>
@@ -838,7 +840,7 @@ function App() {
                 <p>
                   This portfolio's AI assistant connects a
                   React interface with a Node.js backend and
-                  Gemini API to create an intelligent professional
+                  Groq API to create an intelligent professional
                   assistant.
                 </p>
 
@@ -846,7 +848,7 @@ function App() {
                   <span>React</span>
                   <span>TypeScript</span>
                   <span>Node.js</span>
-                  <span>Gemini</span>
+                  <span>Groq</span>
                 </div>
 
               </article>
@@ -989,7 +991,10 @@ function App() {
 
         {/* CERTIFICATIONS */}
 
-        <section className="section-container content-section">
+        <section
+          id="certifications"
+          className="section-container content-section"
+        >
 
           <div className="section-label">
             07 — CERTIFICATIONS

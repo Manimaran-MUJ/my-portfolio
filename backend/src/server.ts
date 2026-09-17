@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 import { manimaranKnowledgeBase } from "./knowledgeBase";
 import { sendInquiryEmail } from "./mailer";
 import rateLimit from "express-rate-limit";
@@ -14,7 +14,10 @@ const PORT = Number(process.env.PORT) || 5000;
 
 app.use(
   cors({
-    origin: "https://manimaran-portfolio-mbr878bq4-manimaran-muj.vercel.app",
+    origin: [
+      "http://localhost:5173",
+      "https://manimaran-portfolio-mbr878bq4-manimaran-muj.vercel.app",
+    ],
   })
 );
 
@@ -46,11 +49,11 @@ const chatLimiter = rateLimit({
 });
 
 // ------------------------------------
-// Gemini AI
+// Groq AI
 // ------------------------------------
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 // ------------------------------------
@@ -116,19 +119,29 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
       },
     ];
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents,
-      config: {
-        systemInstruction: manimaranKnowledgeBase,
-      },
+    const response = await groq.chat.completions.create({
+      model: "openai/gpt-oss-20b",
+      messages: [
+        {
+          role: "system",
+          content: manimaranKnowledgeBase,
+        },
+        ...contents.map((item: any) => ({
+          role: item.role === "model" ? "assistant" : item.role,
+          content: item.parts[0].text,
+        })),
+      ],
     });
 
-    res.json({
-      reply: response.text,
-    });
+    const reply = response.choices[0]?.message?.content;
+
+    if (!reply) {
+      throw new Error("Groq returned an empty response");
+    }
+
+    res.json({ reply });
   } catch (error) {
-    console.error("Gemini API error:", error);
+    console.error("Groq API error:", error);
 
     res.status(500).json({
       error: "Unable to process your request",

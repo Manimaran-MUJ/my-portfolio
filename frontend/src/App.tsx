@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "./App.css";
 
 const API_URL =
@@ -1146,7 +1147,9 @@ function App() {
               >
                 {message.sender === "bot" ? (
                   <div className="chat-markdown">
-                    <ReactMarkdown>{message.text}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.text.replace(/<br\s*\/?>/gi, "\n")}
+                    </ReactMarkdown>
                   </div>
                 ) : (
                   message.text

@@ -493,6 +493,14 @@ function App() {
               <span>Automation</span>
             </div>
 
+            <p className="hero-freelance">
+              Available for freelance projects and part-time engagements.
+            </p>
+
+            <p className="hero-services">
+              AEM development · React & web development · AI integration · Chatbots · Automation
+            </p>
+
             <div className="hero-buttons">
               <a
                 href="#experience"
@@ -501,9 +509,21 @@ function App() {
                 View My Experience
               </a>
 
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => {
+                  setChatOpen(true);
+                  setShowInquiryForm(true);
+                  setInquiryStatus("");
+                }}
+              >
+                Hire Me
+              </button>
+
               <a
                 href="#contact"
-                className="secondary-button"
+                className="primary-button"
               >
                 Let's Talk
               </a>

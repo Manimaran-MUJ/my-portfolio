@@ -190,6 +190,45 @@ a {
   font-weight: 700;
 }
 
+/* Freelance hero information */
+
+.hero-freelance {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 20px;
+  padding: 9px 14px;
+
+  border: 1px solid #dce4f2;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #2864e8;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hero-freelance::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+  background: #20c76a;
+
+  box-shadow: 0 0 0 4px rgba(32, 199, 106, 0.1);
+}
+
+.hero-services {
+  margin-top: 12px;
+
+  color: #68758a;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .hero-buttons {
   display: flex;
   gap: 12px;

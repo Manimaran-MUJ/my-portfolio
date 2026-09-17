@@ -16,7 +16,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://manimaran-portfolio-mbr878bq4-manimaran-muj.vercel.app",
+      "https://manimaran-portfolio-pi.vercel.app",
     ],
   })
 );

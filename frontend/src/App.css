@@ -1170,7 +1170,7 @@ a {
 /* PROJECT INQUIRY */
 
 .inquiry-panel {
-  margin: 0 12px 10px;
+  margin: 12px 12px 0 10px;
   padding: 13px;
   border: 1px solid #dce5f3;
   border-radius: 13px;
@@ -1482,4 +1482,115 @@ a {
   height: 1px !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* =========================================================
+   PROJECT INQUIRY
+   ========================================================= */
+
+.inquiry-panel {
+  width: calc(100% - 24px);
+  margin: 12px 12px 0 10px;
+  padding: 14px;
+  box-sizing: border-box;
+}
+
+.inquiry-header {
+  width: 100%;
+  align-items: flex-start;
+  margin-bottom: 13px;
+}
+
+.inquiry-header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.inquiry-close {
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  margin: 0;
+}
+
+.inquiry-form {
+  width: 100%;
+  gap: 10px;
+}
+
+.inquiry-form label {
+  width: 100%;
+  min-width: 0;
+}
+
+.inquiry-form input,
+.inquiry-form textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.inquiry-form input {
+  height: 38px;
+}
+
+.inquiry-form textarea {
+  min-height: 82px;
+}
+
+.inquiry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.inquiry-row label {
+  min-width: 0;
+}
+
+.inquiry-submit {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  margin-top: 1px;
+}
+
+@media (max-width: 650px) {
+  .inquiry-panel {
+    width: calc(100% - 16px);
+    margin: 8px 8px 0 8px;
+    padding: 13px;
+  }
+
+  .inquiry-row {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+}
+
+/* =========================================================
+   COMPACT CHAT WIDGET WHEN PROJECT INQUIRY IS OPEN
+   ========================================================= */
+
+.chat-widget:has(.inquiry-panel) {
+  height: auto;
+  min-height: 0;
+  max-height: calc(100vh - 56px);
+}
+
+.chat-widget:has(.inquiry-panel) .inquiry-panel {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+
+/* Prevent an unnecessary large empty chat area */
+.chat-widget:has(.inquiry-panel) .chat-messages {
+  display: none;
+}
+
+.chat-widget:has(.inquiry-panel) .chat-suggestions,
+.chat-widget:has(.inquiry-panel) .chat-input-area {
+  display: none;
 }

@@ -1158,41 +1158,38 @@ function App() {
             </button>
 
           </div>
-
-          <div className="chat-messages">
-
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`chat-message ${
-                  message.sender === "user"
-                    ? "user-message"
-                    : "bot-message"
-                }`}
-              >
-                {message.sender === "bot" ? (
-                  <div className="chat-markdown">
+          {!showInquiryForm && (
+            <div className="chat-messages">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`chat-message ${
+                    message.sender === "user"
+                      ? "user-message"
+                      : "bot-message"
+                  }`}
+                >
+                  {message.sender === "bot" ? (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {message.text.replace(/<br\s*\/?>/gi, "\n")}
                     </ReactMarkdown>
-                  </div>
-                ) : (
-                  message.text
-                )}
-              </div>
-            ))}
+                  ) : (
+                    message.text
+                  )}
+                </div>
+              ))}
 
-            {loading && (
-              <div className="bot-message typing">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            )}
+              {loading && (
+                <div className="chat-message bot-message typing">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              )}
 
-            <div ref={messagesEndRef}></div>
-
-          </div>
+              <div ref={messagesEndRef} />
+            </div>
+          )}
 
 
           {showInquiryForm && (
@@ -1333,80 +1330,84 @@ function App() {
             </div>
           )}
 
-          <div className="chat-suggestions">
+          {!showInquiryForm && (
+            <div className="chat-suggestions">
 
-            <button
-              onClick={() =>
-                sendMessage(
-                  "Tell me about Manimaran's experience"
-                )
-              }
-            >
-              Experience
-            </button>
+              <button
+                onClick={() =>
+                  sendMessage(
+                    "Tell me about Manimaran's experience"
+                  )
+                }
+              >
+                Experience
+              </button>
 
-            <button
-              onClick={() =>
-                sendMessage(
-                  "What technologies does Manimaran work with?"
-                )
-              }
-            >
-              Skills
-            </button>
+              <button
+                onClick={() =>
+                  sendMessage(
+                    "What technologies does Manimaran work with?"
+                  )
+                }
+              >
+                Skills
+              </button>
 
-            <button
-              onClick={() =>
-                sendMessage(
-                  "Tell me about Manimaran's automation experience"
-                )
-              }
-            >
-              Automation
-            </button>
+              <button
+                onClick={() =>
+                  sendMessage(
+                    "Tell me about Manimaran's automation experience"
+                  )
+                }
+              >
+                Automation
+              </button>
 
-            <button
-              onClick={() =>
-                sendMessage(
-                  "What services can Manimaran provide?"
-                )
-              }
-            >
-              Services
-            </button>
+              <button
+                onClick={() =>
+                  sendMessage(
+                    "What services can Manimaran provide?"
+                  )
+                }
+              >
+                Services
+              </button>
 
-            <button
-              onClick={() => {
-                setShowInquiryForm(true);
-                setInquiryStatus("");
-              }}
-            >
-              Hire Me
-            </button>
+              <button
+                onClick={() => {
+                  setShowInquiryForm(true);
+                  setInquiryStatus("");
+                }}
+              >
+                Hire Me
+              </button>
 
-          </div>
+            </div>
+          )}
+          
+          {!showInquiryForm && (
+            <div className="chat-input-area">
 
-          <div className="chat-input-area">
+              <input
+                type="text"
+                value={input}
+                onChange={(event) =>
+                  setInput(event.target.value)
+                }
+                onKeyDown={handleKeyDown}
+                placeholder="Ask about Manimaran..."
+                disabled={loading}
+              />
 
-            <input
-              type="text"
-              value={input}
-              onChange={(event) =>
-                setInput(event.target.value)
-              }
-              onKeyDown={handleKeyDown}
-              placeholder="Ask about Manimaran..."
-              disabled={loading}
-            />
+              <button
+                onClick={() => sendMessage()}
+                disabled={loading}
+              >
+                {loading ? "..." : "Send"}
+              </button>
 
-            <button
-              onClick={() => sendMessage()}
-              disabled={loading}
-            >
-              {loading ? "..." : "Send"}
-            </button>
-
-          </div>
+            </div>
+          )}
 
         </div>
       )}
